@@ -1,66 +1,61 @@
-# Distributed-kv-store
+# RAFT-KV
 
-Simple distributed kv-store using ABD algorithm.
+Simple distributed kv-store using RAFT algorithm.
 
-### API
+### Client API
 
-- GET /key
-    - Get value by key. 302 = found key.
-- PUT /key
-    - Put key with value. 201 = written, anything else = probably not written.
-- DELETE /key
-    - Delete value by key. 204 = deleted, anything else = probably not deleted.
+- Get\tkey
+    - Get value by key.
+- Set\tkey\tvalue
+    - Put key with value. 
+- Del\tkey
+    - Delete value by key.
+- CAS\tOldValue\tNewValue
+    - Cas value by key. If it is equal to old value, then change to new value.
 
 ### Start replicas
 
 ```
-./run.sh --replica --port 3001 --db /tmp/pbd1/ &
-./run.sh --replica --port 3002 --db /tmp/pbd2/ &
-./run.sh --replica --port 3003 --db /tmp/pbd3/ &
+./run.sh --server --port 3000 --replicasAddrs localhost:3001,localhost:3002,localhost:3003 --replicasIDs 1,2,3 --guid 1 &
+./run.sh --server --port 3000 --replicasAddrs localhost:3001,localhost:3002,localhost:3003 --replicasIDs 1,2,3 --guid 1 &
+./run.sh --server --port 3000 --replicasAddrs localhost:3001,localhost:3002,localhost:3003 --replicasIDs 1,2,3 --guid 1 &
 ```
 
-### Start Master Server (default port 3000)
+### Start client
 
 ```
-./run.sh --coordinator --port 3000 --replicas localhost:3001,localhost:3002,localhost:3003 --guid Coordinator1
+./run.sh --client --replicasAddrs localhost:3001,localhost:3002,localhost:3003
 ```
 
 
 ### Usage
 
 ```
-# put "bigswag" in key "wehave"
-curl -L -X PUT -d bigswag localhost:3000/wehave
-
-# get key "wehave" (should be "bigswag")
-curl -L localhost:3000/wehave
-
-# delete key "wehave"
-curl -L -X DELETE localhost:3000/wehave
-
-# put file in key "file.txt"
-curl -v -L -X PUT -T /path/to/local/file.txt localhost:3000/file.txt
-
-# get file in key "file.txt"
-curl -v -L -o /path/to/local/file.txt localhost:3000/file.txt
+Set	k	v
+Response Result: Ok
+Get	k
+Response Result: v
+CAS	k	v	v2
+Response Result: true
+Del	k
+Response Result: Ok
 ```
 
 ### ./run.sh Usage
 
 ```
-Usage: ./run.sh <coorindator, replica>
-
-  -coordinator
-        Do we start coordinator
-  -db string
-        Path to leveldb
+Usage: ./run.sh <client, server>
+  -client
+        Start client
   -guid string
         Global unique identifier for coordinator. Should be unique between all coordinators.
   -port int
         Port for the server to listen on (default 3000)
-  -replica
-        Do we start replica
-  -replicas string
-        Replicas to use for storage, comma separated
+  -replicasAddrs string
+        Replicas addresses, comma separated
+  -replicasIDs string
+        Replicas ids, comma separated
+  -server
+        Start server
   -v    Verbose output
 ```
